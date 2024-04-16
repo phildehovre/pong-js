@@ -13,7 +13,7 @@ let ball = {
     y: boardHeight / 2,
     width: ballWidth,
     height: ballHeight,
-    dx: 4,
+    dx: 2,
     dy: Math.random() * 10 - 5
 };
 
@@ -48,7 +48,7 @@ let score = [0, 0]
         height: paddleHeight
     };
     adversary = {
-        x: 10,
+        x: boardWidth - 100,
         y: boardHeight / 2 - adversaryHeight / 2,
         width: adversaryWidth,
         height: adversaryHeight
@@ -57,6 +57,7 @@ let score = [0, 0]
 
     requestAnimationFrame(gameLoop);
     document.addEventListener('keydown', movePaddle);
+    document.addEventListener('keydown', moveAdversary);
  }
 
  function gameLoop() {
@@ -80,7 +81,7 @@ let score = [0, 0]
 
     // draw adversary
     context.fillStyle = "white";
-    context.fillRect(boardWidth - 20, ball.y - adversaryHeight /2, adversary.width, adversary.height);
+    context.fillRect(adversary.x, adversary.y, adversary.width, adversary.height);
     
     // draw ball
     context.fillStyle = "white";
@@ -89,10 +90,10 @@ let score = [0, 0]
     context.fillRect(ball.x, ball.y, ball.width, ball.height);
 
     if (ball.y + ballHeight > boardHeight || ball.y < 0) {
-        ball.dy = -ball.dy;
+        ball.dy *= -1;
     }
 
-    if (ball.x + ballHeight > boardWidth) {
+    if (ball.x >= boardWidth) {
         score = [score[0] +1 , score[1]];
         reset()
     } else if (ball.x < 0) {
@@ -101,14 +102,17 @@ let score = [0, 0]
     }
 
     if (detectCollision(ball, paddle)) {
-        if (ball.x <= paddle.x + paddle.width)
-        ball.dx = -ball.dx;
-    } else if (detectCollision(ball, adversary)) {
-        if (ball.dx > 0 && ball.x + ballWidth >= adversary.x) { // Ball moving right and right side of ball touches left side of adversary
-            ball.dx = -ball.dx;   // Flip x direction
+        console.log('Bing')
+        if (ball.x <= paddle.x + paddle.width) { //left side of ball touches right side of player 1 (left paddle)
+            ball.dx *= -1;   // flip x direction
         }
     }
-
+    else if (detectCollision(ball, adversary)) {
+        console.log('Bong')
+        if (ball.x + ballWidth >= adversary.x) { //right side of ball touches left side of player 2 (right paddle)
+            ball.dx *= -1;   // flip x direction
+        }
+    }
     // display score
     context.font = "30px Arial";
     context.fillText(score[0], 200, 50);
@@ -130,6 +134,20 @@ let score = [0, 0]
             break;
     }
  }
+ function moveAdversary(e) {
+    switch(e.code) {
+        case 'KeyW':
+            if(adversary.y > 0) {
+                adversary.y -= 10;
+            }
+            break;
+        case 'KeyS':
+            if(adversary.y < boardHeight - adversary.height) {
+                adversary.y += 10;
+            }
+            break;
+    }
+ }
 
  function reset() {
     gameOver = false;
@@ -142,8 +160,8 @@ let score = [0, 0]
  }
 
  function detectCollision(a, b) {
-    return a.x < b.x + b.width && 
-    a.x + a.width > b.x && 
-    a.y < b.y + b.height && 
-    a.y + a.height > b.y;
- }
+    return a.x < b.x + b.width &&   //a's top left corner doesn't reach b's top right corner
+           a.x + a.width > b.x &&   //a's top right corner passes b's top left corner
+           a.y < b.y + b.height &&  //a's top left corner doesn't reach b's bottom left corner
+           a.y + a.height > b.y;    //a's bottom left corner passes b's top left corner
+}
